@@ -15,6 +15,7 @@
  */
 package org.gradoop.flink.algorithms.fsm.dimspan.gspan;
 
+import org.gradoop.flink.algorithms.fsm.dimspan.tuples.GraphWithPatternEmbeddingsMap;
 import org.gradoop.flink.algorithms.fsm.dimspan.tuples.PatternEmbeddingsMap;
 
 import java.io.Serializable;
@@ -77,4 +78,12 @@ public interface GSpanLogic extends Serializable {
    * @return graph
    */
   int[] getGraph(int[] pattern);
+
+  /**
+   * Calculates pair matches using simpleSimulation
+   *
+   * @param pair Graph with PatternsEmbeddingMap
+   * @return updated pair
+   */
+  GraphWithPatternEmbeddingsMap simpleSimulation(GraphWithPatternEmbeddingsMap pair);
 }

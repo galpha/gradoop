@@ -37,6 +37,21 @@ public class DIMSpanConfig implements Serializable {
   private boolean directed = true;
 
   /**
+   * Execution mode (true = EL; false = RE)
+   */
+  private boolean mode = true;
+
+  /**
+   * Optimization label distribution in case of RE Mode
+   */
+  private boolean labelDistribution = true;
+
+  /**
+   * Optimization multi matching in case of RE Mode
+   */
+  private boolean multiMatching = false;
+
+  /**
    * Dictionary type used for dictionary coding.
    */
   private DictionaryType dictionaryType = DictionaryType.INVERSE_PROPORTIONAL;
@@ -71,9 +86,10 @@ public class DIMSpanConfig implements Serializable {
    * @param minSupport minimum relative support of a subgraph
    * @param directed direction mode
    */
-  public DIMSpanConfig(float minSupport, boolean directed) {
+  public DIMSpanConfig(float minSupport, boolean directed, boolean mode) {
     this.minSupport = minSupport;
     this.directed = directed;
+    this.mode = mode;
   }
 
   @Override
@@ -168,5 +184,29 @@ public class DIMSpanConfig implements Serializable {
 
   public boolean isBranchConstraintEnabled() {
     return branchConstraintEnabled;
+  }
+
+  public boolean isMode() {
+    return mode;
+  }
+
+  public void setMode(boolean mode) {
+    this.mode = mode;
+  }
+
+  public boolean isLabelDistribution() {
+    return this.labelDistribution;
+  }
+
+  public void setLabelDistribution(boolean labelDistribution) {
+    this.labelDistribution = labelDistribution;
+  }
+
+  public boolean isMultiMatching() {
+    return multiMatching;
+  }
+
+  public void setMultiMatching(boolean multiMatching) {
+    this.multiMatching = multiMatching;
   }
 }

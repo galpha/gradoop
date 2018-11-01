@@ -47,6 +47,16 @@ public class GrowFrequentPatterns
   private List<int[]> frequentPatterns;
 
   /**
+   * list of vertex label in descending order.
+   */
+  private String[] vertexLabelOrder;
+
+  /**
+   * list of edge label in descending order.
+   */
+  private String[] edgeLabelOrder;
+
+  /**
    * patterns with frequency for collector
    */
   private List<WithCount<int[]>> patternFrequencies;
@@ -82,9 +92,26 @@ public class GrowFrequentPatterns
   private final boolean compressEmbeddings;
 
   /**
+   * flag to enable label distribution optimization (true=enabled)
+   */
+  private boolean labelDistribution = false;
+
+  /**
+   * flag to enable multi matching optimization (true=enabled)
+   */
+  private boolean multiMatching = false;
+
+  /**
+   * flag to switch execution mode (true = EL; false = RE)
+   */
+  private final boolean mode;
+
+  /**
    * flag to enable pattern verification before counting (true=enabled)
    */
   private final boolean validatePatterns;
+
+  private final DIMSpanConfig config;
 
   /**
    * Constructor.
@@ -105,6 +132,15 @@ public class GrowFrequentPatterns
 
     // cache validation flag
     validatePatterns = fsmConfig.getPatternVerificationInStep() == DataflowStep.MAP;
+
+    mode = fsmConfig.isMode();
+
+    if (!mode) {
+      labelDistribution = fsmConfig.isLabelDistribution();
+      multiMatching = fsmConfig.isMultiMatching();
+    }
+
+    this.config = fsmConfig;
   }
 
   @Override
@@ -144,6 +180,12 @@ public class GrowFrequentPatterns
       compressedFrequentPatterns
         .add(compressPatterns ? Simple16Compressor.compress(pattern) : pattern);
     }
+
+    this.vertexLabelOrder =
+      getRuntimeContext().<String[]>getBroadcastVariable(DIMSpanConstants.VERTEX_DICTIONARY).get(0);
+
+    this.edgeLabelOrder =
+      getRuntimeContext().<String[]>getBroadcastVariable(DIMSpanConstants.EDGE_DICTIONARY).get(0);
   }
 
   @Override
@@ -160,6 +202,10 @@ public class GrowFrequentPatterns
       // uncompress graph
       if (compressGraphs) {
         graph = Simple16Compressor.uncompress(graph);
+      }
+
+      if (!mode) {
+        pair = gSpan.simpleSimulation(pair);
       }
 
       // execute pattern growth for all supported frequent patterns

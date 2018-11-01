@@ -22,6 +22,7 @@ import org.gradoop.flink.algorithms.fsm.dimspan.model.DFSCodeUtils;
 import org.gradoop.flink.algorithms.fsm.dimspan.model.SearchGraphUtils;
 import org.gradoop.flink.algorithms.fsm.dimspan.model.SortedSearchGraphUtils;
 import org.gradoop.flink.algorithms.fsm.dimspan.model.UnsortedSearchGraphUtils;
+import org.gradoop.flink.algorithms.fsm.dimspan.tuples.GraphWithPatternEmbeddingsMap;
 import org.gradoop.flink.algorithms.fsm.dimspan.tuples.PatternEmbeddingsMap;
 
 import java.io.Serializable;
@@ -444,4 +445,14 @@ public abstract class GSpanLogicBase implements GSpanLogic, Serializable {
     return graph;
   }
 
+  @Override
+  public GraphWithPatternEmbeddingsMap simpleSimulation(GraphWithPatternEmbeddingsMap pair) {
+
+
+
+
+
+
+    return null;
+  }
 }

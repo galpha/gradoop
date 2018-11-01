@@ -74,6 +74,11 @@ public class DIMSpan {
   protected final DIMSpanConfig fsmConfig;
 
   /**
+   * Sets execution mode (RE and EL)
+   */
+  protected boolean executionMode;
+
+  /**
    * input graph collection cardinality
    */
   protected DataSet<Long> graphCount;
@@ -116,6 +121,8 @@ public class DIMSpan {
     gSpan = fsmConfig.isDirected() ?
       new DirectedGSpanLogic(fsmConfig) :
       new UndirectedGSpanLogic(fsmConfig);
+
+    executionMode = fsmConfig.isMode();
 
     // set comparator based on dictionary type
     if (fsmConfig.getDictionaryType() == DictionaryType.PROPORTIONAL) {
@@ -204,6 +211,8 @@ public class DIMSpan {
     DataSet<GraphWithPatternEmbeddingsMap> grownEmbeddings = iterative
       .map(new GrowFrequentPatterns(gSpan, fsmConfig))
       .withBroadcastSet(frequentPatterns, DIMSpanConstants.FREQUENT_PATTERNS)
+      .withBroadcastSet(vertexDictionary, DIMSpanConstants.VERTEX_DICTIONARY)
+      .withBroadcastSet(edgeDictionary, DIMSpanConstants.EDGE_DICTIONARY)
       .filter(new NotObsolete());
 
     // ITERATION FOOTER

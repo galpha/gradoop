@@ -51,6 +51,11 @@ public class DIMSpanRunner extends AbstractRunner implements ProgramDescription 
   public static final String OPTION_UNDIRECTED_MODE = "u";
 
   /**
+   * Option to switch execution modes (re and el). Default is el.
+   */
+  public static final String OPTION_EXECUTION_MODE = "re";
+
+  /**
    * Gradoop configuration
    */
   private static GradoopFlinkConfig GRADOOP_CONFIG =
@@ -61,6 +66,7 @@ public class DIMSpanRunner extends AbstractRunner implements ProgramDescription 
     OPTIONS.addOption(OPTION_OUTPUT_PATH, "output-path", true, "Path to output file");
     OPTIONS.addOption(OPTION_MIN_SUPPORT, "min-support", true, "Minimum support threshold");
     OPTIONS.addOption(OPTION_UNDIRECTED_MODE, "undirected", false, "Enable undirected mode");
+    OPTIONS.addOption(OPTION_EXECUTION_MODE, "execution", false, "Execution mode");
   }
 
   /**
@@ -89,7 +95,8 @@ public class DIMSpanRunner extends AbstractRunner implements ProgramDescription 
     DIMSpanTLFSource dataSource = new DIMSpanTLFSource(inputPath, GRADOOP_CONFIG);
     DataSink dataSink = new TLFDataSink(outputPath, GRADOOP_CONFIG);
 
-    DIMSpanConfig fsmConfig = new DIMSpanConfig(minSupport, directed);
+    DIMSpanConfig fsmConfig = new DIMSpanConfig(minSupport, directed,
+      getExecutionMode(cmd.getOptionValue(OPTION_EXECUTION_MODE)));
 
     // Change default configuration here using setter methods
 
@@ -102,6 +109,7 @@ public class DIMSpanRunner extends AbstractRunner implements ProgramDescription 
       true);
     getExecutionEnvironment().execute();
   }
+
 
   /**
    * Checks if the minimum of arguments is provided
@@ -118,6 +126,16 @@ public class DIMSpanRunner extends AbstractRunner implements ProgramDescription 
     if (!cmd.hasOption(OPTION_MIN_SUPPORT)) {
       throw new IllegalArgumentException("No min support specified.");
     }
+  }
+
+  /**
+   * Checks what execution mode is set
+   *
+   * @param optionValue execution mode
+   * @return boolean execution mode
+   */
+  private static boolean getExecutionMode(String optionValue) {
+    return optionValue.equals("re");
   }
 
   /**
