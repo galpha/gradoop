@@ -772,8 +772,7 @@ public class PropertyValue implements Value, Serializable, Comparable<PropertyVa
    * @param list value
    */
   public void setList(List<PropertyValue> list) {
-    int size = list.stream().mapToInt(PropertyValue::byteSize).sum() +
-      OFFSET;
+    int size = list.stream().mapToInt(PropertyValue::byteSize).sum() + OFFSET;
 
     ByteArrayOutputStream byteStream = new ByteArrayOutputStream(size);
     DataOutputStream outputStream = new DataOutputStream(byteStream);
