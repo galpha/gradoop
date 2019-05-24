@@ -19,7 +19,7 @@ public class GradoopARPartitioningTest extends GradoopFlinkTestBase {
 
     LogicalGraph testGraph = source.getLogicalGraph();
 
-    LogicalGraph resultGraph = new GradoopARPartitioning(2, 200, "partition").execute(testGraph);
+    LogicalGraph resultGraph = new GradoopARPartitioning(2, 100, "partition").execute(testGraph);
 
     String output = "/home/galpha/datasets/gradoop/facebook_partitioned.dot";
 

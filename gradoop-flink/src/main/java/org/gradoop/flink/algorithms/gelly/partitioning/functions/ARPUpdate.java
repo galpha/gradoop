@@ -107,8 +107,10 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
       // partition -> neighbours in partition i
       long[] countNeighbours = getPartitionFrequencies(messages);
       // partition -> desire to migrate
+
+      long outDegree = getOutDegree();
       double[] partitionWeights =
-        getPartitionWeights(countNeighbours, getOutDegree());
+        getPartitionWeights(countNeighbours, outDegree);
       double firstMax = Integer.MIN_VALUE;
       double secondMax = Integer.MIN_VALUE;
       int firstK = -1;

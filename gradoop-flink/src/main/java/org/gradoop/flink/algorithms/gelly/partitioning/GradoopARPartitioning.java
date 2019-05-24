@@ -2,6 +2,7 @@ package org.gradoop.flink.algorithms.gelly.partitioning;
 
 import org.apache.flink.api.common.aggregators.LongSumAggregator;
 import org.apache.flink.api.java.DataSet;
+import org.apache.flink.api.java.tuple.Tuple1;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.DataSetUtils;
 import org.apache.flink.graph.Edge;
@@ -21,6 +22,7 @@ import org.gradoop.flink.algorithms.gelly.partitioning.tuples.ARPVertexValue;
 import org.gradoop.flink.algorithms.gelly.randomjump.KRandomJumpGellyVCI;
 import org.gradoop.flink.algorithms.gelly.randomjump.functions.LongIdWithEdgeToTupleJoin;
 import org.gradoop.flink.algorithms.gelly.randomjump.functions.ReplaceTargetWithLongIdJoin;
+import org.gradoop.flink.algorithms.gelly.vertexdegrees.DistinctVertexDegrees;
 import org.gradoop.flink.model.impl.epgm.LogicalGraph;
 import org.gradoop.flink.model.impl.functions.epgm.Id;
 import org.gradoop.flink.model.impl.functions.epgm.SourceId;
@@ -63,7 +65,9 @@ public class GradoopARPartitioning extends BaseGellyAlgorithm<Long, ARPVertexVal
   @Override
   public Graph<Long, ARPVertexValue, NullValue> transformToGelly(LogicalGraph graph) {
 
-    this.currentGraph = graph;
+    this.currentGraph =
+      new DistinctVertexDegrees("degree", "indegree", "outdegree", true).execute(graph);
+
 
     vertexIdsMap = DataSetUtils.zipWithUniqueId(graph.getVertices().map(new Id<>()));
 
@@ -119,6 +123,7 @@ public class GradoopARPartitioning extends BaseGellyAlgorithm<Long, ARPVertexVal
     }
 
     configuration.setOptNumVertices(true);
+    //configuration.setOptDegrees(true);
 
     return configuration;
   }
