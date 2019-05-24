@@ -1,9 +1,10 @@
 package org.gradoop.flink.algorithms.gelly.partitioning;
 
 import org.apache.flink.api.common.aggregators.LongSumAggregator;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
-import org.apache.flink.api.java.tuple.Tuple1;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.utils.DataSetUtils;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
@@ -18,10 +19,10 @@ import org.gradoop.flink.algorithms.gelly.partitioning.functions.AddPartitionPro
 import org.gradoop.flink.algorithms.gelly.partitioning.functions.InitializeARPVertex;
 import org.gradoop.flink.algorithms.gelly.partitioning.functions.LongIdTupleToGellyEdgeWithNullValueJoin;
 import org.gradoop.flink.algorithms.gelly.partitioning.functions.PrepareResultTuple;
+import org.gradoop.flink.algorithms.gelly.partitioning.functions.ReplaceSourceIdJoin;
+import org.gradoop.flink.algorithms.gelly.partitioning.functions.ReplaceTargetIdJoin;
 import org.gradoop.flink.algorithms.gelly.partitioning.tuples.ARPVertexValue;
 import org.gradoop.flink.algorithms.gelly.randomjump.KRandomJumpGellyVCI;
-import org.gradoop.flink.algorithms.gelly.randomjump.functions.LongIdWithEdgeToTupleJoin;
-import org.gradoop.flink.algorithms.gelly.randomjump.functions.ReplaceTargetWithLongIdJoin;
 import org.gradoop.flink.algorithms.gelly.vertexdegrees.DistinctVertexDegrees;
 import org.gradoop.flink.model.impl.epgm.LogicalGraph;
 import org.gradoop.flink.model.impl.functions.epgm.Id;
@@ -44,7 +45,7 @@ public class GradoopARPartitioning extends BaseGellyAlgorithm<Long, ARPVertexVal
 
   private final int numPartitions;
 
-  DataSet<Tuple2<Long, GradoopId>> vertexIdsMap;
+  DataSet<Tuple3<Long, GradoopId, Long>> vertexIdsMap;
 
   DataSet<Tuple2<Long, GradoopId>> edgeIdsMap;
 
@@ -69,20 +70,33 @@ public class GradoopARPartitioning extends BaseGellyAlgorithm<Long, ARPVertexVal
       new DistinctVertexDegrees("degree", "indegree", "outdegree", true).execute(graph);
 
 
-    vertexIdsMap = DataSetUtils.zipWithUniqueId(graph.getVertices().map(new Id<>()));
+    vertexIdsMap =
+      DataSetUtils.zipWithUniqueId(currentGraph.getVertices().map(new MapFunction<org.gradoop.common.model.impl.pojo.Vertex, Tuple2<GradoopId, Long>>() {
+        @Override
+        public Tuple2<GradoopId, Long> map(org.gradoop.common.model.impl.pojo.Vertex vertex) throws Exception {
+          return new Tuple2<>(vertex.getId(), vertex.getPropertyValue("outdegree").getLong());
+        }
+      })).map(new MapFunction<Tuple2<Long, Tuple2<GradoopId, Long>>, Tuple3<Long, GradoopId,
+      Long>>() {
+      @Override
+      public Tuple3<Long, GradoopId, Long> map(Tuple2<Long, Tuple2<GradoopId, Long>> value) throws
+        Exception {
+        return new Tuple3<>(value.f0, value.f1.f0, value.f1.f1);
+      }
+    });
 
     edgeIdsMap = DataSetUtils.zipWithUniqueId(graph.getEdges().map(new Id<>()));
 
     DataSet<Vertex<Long, ARPVertexValue>> gellyVertices =
-      vertexIdsMap.map(new InitializeARPVertex(numPartitions));
+      vertexIdsMap.map(new InitializeARPVertex());
 
     DataSet<Edge<Long, NullValue>> gellyEdges = graph.getEdges()
       .join(vertexIdsMap)
       .where(new SourceId<>()).equalTo(1)
-      .with(new LongIdWithEdgeToTupleJoin())
+      .with(new ReplaceSourceIdJoin())
       .join(vertexIdsMap)
       .where(1).equalTo(1)
-      .with(new ReplaceTargetWithLongIdJoin())
+      .with(new ReplaceTargetIdJoin())
       .join(edgeIdsMap)
       .where(2).equalTo(1)
       .with(new LongIdTupleToGellyEdgeWithNullValueJoin());
@@ -95,8 +109,7 @@ public class GradoopARPartitioning extends BaseGellyAlgorithm<Long, ARPVertexVal
 
     ScatterGatherConfiguration configuration = createVCIParams();
 
-    Graph<Long, ARPVertexValue, NullValue> resultGraph = graph.getUndirected()
-      .runScatterGatherIteration(
+    Graph<Long, ARPVertexValue, NullValue> resultGraph = graph.getUndirected().runScatterGatherIteration(
       new ARPMessage(), new ARPUpdate(numPartitions), maxIteration, configuration);
 
     DataSet<org.gradoop.common.model.impl.pojo.Vertex> updatedVertices = resultGraph.getVertices()

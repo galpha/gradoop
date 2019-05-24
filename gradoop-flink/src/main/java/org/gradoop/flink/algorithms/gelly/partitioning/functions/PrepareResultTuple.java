@@ -8,7 +8,7 @@ import org.gradoop.common.model.impl.id.GradoopId;
 import org.gradoop.flink.algorithms.gelly.partitioning.tuples.ARPVertexValue;
 
 public class PrepareResultTuple
-  implements JoinFunction<Vertex<Long, ARPVertexValue>, Tuple2<Long, GradoopId>,
+  implements JoinFunction<Vertex<Long, ARPVertexValue>, Tuple3<Long, GradoopId, Long>,
   Tuple3<Long, GradoopId, Long>> {
 
   private Tuple3<Long, GradoopId, Long> reuse;
@@ -19,7 +19,7 @@ public class PrepareResultTuple
 
   @Override
   public Tuple3<Long, GradoopId, Long> join(Vertex<Long, ARPVertexValue> vertex,
-    Tuple2<Long, GradoopId> vertexIdMap) throws Exception {
+    Tuple3<Long, GradoopId, Long> vertexIdMap) throws Exception {
 
     reuse.f0 = vertexIdMap.f0;
     reuse.f1 = vertexIdMap.f1;
