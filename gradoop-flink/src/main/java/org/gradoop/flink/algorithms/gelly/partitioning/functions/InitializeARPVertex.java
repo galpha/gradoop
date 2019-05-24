@@ -21,7 +21,7 @@ public class InitializeARPVertex implements MapFunction<Tuple2<Long, GradoopId>,
 
     long initValue = tuple.f0 % numPartitions;
 
-    ARPVertexValue value = new ARPVertexValue(initValue, 0);
+    ARPVertexValue value = new ARPVertexValue(Long.MAX_VALUE, Long.MAX_VALUE);
 
     reuse.setId(tuple.f0);
     reuse.setValue(value);

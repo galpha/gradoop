@@ -1,6 +1,5 @@
 package org.gradoop.flink.algorithms.gelly.partitioning;
 
-import org.apache.flink.api.common.aggregators.Aggregator;
 import org.apache.flink.api.common.aggregators.LongSumAggregator;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -25,8 +24,6 @@ import org.gradoop.flink.algorithms.gelly.randomjump.functions.ReplaceTargetWith
 import org.gradoop.flink.model.impl.epgm.LogicalGraph;
 import org.gradoop.flink.model.impl.functions.epgm.Id;
 import org.gradoop.flink.model.impl.functions.epgm.SourceId;
-
-import java.util.Map;
 
 public class GradoopARPartitioning extends BaseGellyAlgorithm<Long, ARPVertexValue, NullValue, LogicalGraph> {
 
@@ -94,7 +91,8 @@ public class GradoopARPartitioning extends BaseGellyAlgorithm<Long, ARPVertexVal
 
     ScatterGatherConfiguration configuration = createVCIParams();
 
-    Graph<Long, ARPVertexValue, NullValue> resultGraph = graph.runScatterGatherIteration(
+    Graph<Long, ARPVertexValue, NullValue> resultGraph = graph.getUndirected()
+      .runScatterGatherIteration(
       new ARPMessage(), new ARPUpdate(numPartitions), maxIteration, configuration);
 
     DataSet<org.gradoop.common.model.impl.pojo.Vertex> updatedVertices = resultGraph.getVertices()
@@ -120,10 +118,7 @@ public class GradoopARPartitioning extends BaseGellyAlgorithm<Long, ARPVertexVal
       configuration.registerAggregator(DEMAND_AGGREGATOR_PREFIX + i, new LongSumAggregator());
     }
 
-    for (Map.Entry<String, Aggregator<?>> value :configuration.getAggregators().entrySet()) {
-      System.out.println(value.getKey());
-      System.out.println(value.getValue());
-    }
+    configuration.setOptNumVertices(true);
 
     return configuration;
   }

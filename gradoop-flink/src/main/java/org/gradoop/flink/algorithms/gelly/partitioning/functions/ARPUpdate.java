@@ -50,7 +50,7 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
       long newValue = vertex.getId() % k;
       String aggregator = CAPACITY_AGGREGATOR_PREFIX + newValue;
       notifyAggregator(aggregator, POSITIVE_ONE);
-      setNewVertexValue(new ARPVertexValue(newValue, 0));
+      setNewVertexValue(new ARPVertexValue(newValue, Long.MAX_VALUE));
     } else {
       //odd numbered superstep 3 (migrate)
       if ((getSuperstepNumber() % 2) == 1) {
@@ -72,8 +72,7 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
         if (changed) {
           String aggregator = DEMAND_AGGREGATOR_PREFIX + desiredPartition;
           notifyAggregator(aggregator, POSITIVE_ONE);
-          setNewVertexValue(
-            new ARPVertexValue(currentPartition, desiredPartition));
+          setNewVertexValue(new ARPVertexValue(currentPartition, desiredPartition));
         }
         String aggregator = CAPACITY_AGGREGATOR_PREFIX + currentPartition;
         notifyAggregator(aggregator, POSITIVE_ONE);
@@ -105,7 +104,7 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
     long desiredPartition = vertex.getValue().getDesiredPartition();
     // got messages?
     if (messages.iterator().hasNext()) {
-      // partition -> neighbours in partitioni
+      // partition -> neighbours in partition i
       long[] countNeighbours = getPartitionFrequencies(messages);
       // partition -> desire to migrate
       double[] partitionWeights =
@@ -236,6 +235,7 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
    */
   private long getAggregatedValue(String agg) {
     LongValue aggregatedValue = getPreviousIterationAggregate(agg);
+
     return aggregatedValue.getValue();
   }
 }
