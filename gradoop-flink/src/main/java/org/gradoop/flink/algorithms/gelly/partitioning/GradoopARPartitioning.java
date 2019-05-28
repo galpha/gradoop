@@ -88,7 +88,7 @@ public class GradoopARPartitioning extends BaseGellyAlgorithm<Long, ARPVertexVal
     edgeIdsMap = DataSetUtils.zipWithUniqueId(graph.getEdges().map(new Id<>()));
 
     DataSet<Vertex<Long, ARPVertexValue>> gellyVertices =
-      vertexIdsMap.map(new InitializeARPVertex());
+      vertexIdsMap.map(new InitializeARPVertex(numPartitions));
 
     DataSet<Edge<Long, NullValue>> gellyEdges = graph.getEdges()
       .join(vertexIdsMap)

@@ -43,39 +43,70 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
   }
 
 
+//  @Override
+//  public void updateVertex(Vertex<Long, ARPVertexValue> vertex,
+//    MessageIterator<Long> msg) throws Exception {
+//    System.out.println(getSuperstepNumber());
+//    if (getSuperstepNumber() == 1) {
+//      long newValue = vertex.getId() % k;
+//      notifyAggregator(getCapacityAggregatorString(newValue), POSITIVE_ONE);
+//      setNewVertexValue(new ARPVertexValue(newValue, Long.MAX_VALUE));
+//    } else {
+//      //odd numbered superstep 3 (migrate)
+//      if ((getSuperstepNumber() % 2) == 1) {
+//        long desiredPartition = vertex.getValue().getDesiredPartition();
+//        long currentPartition = vertex.getValue().getCurrentPartition();
+//        if (desiredPartition != currentPartition) {
+//          boolean migrate = doMigrate(desiredPartition);
+//          if (migrate) {
+//            migrateVertex(vertex, desiredPartition);
+//          } else {
+//            setNewVertexValue(vertex.getValue());
+//          }
+//        }
+//        notifyAggregator(getCapacityAggregatorString(currentPartition), POSITIVE_ONE);
+//        //even numbered superstep 2 (demand)
+//      } else if ((getSuperstepNumber() % 2) == 0) {
+//        long desiredPartition = getDesiredPartition(vertex, msg);
+//        long currentPartition = vertex.getValue().getCurrentPartition();
+//        boolean changed = currentPartition != desiredPartition;
+//        if (changed) {
+//          notifyAggregator(getDemandAggregatorString(desiredPartition), POSITIVE_ONE);
+//          setNewVertexValue(new ARPVertexValue(currentPartition, desiredPartition));
+//        }
+//        notifyAggregator(getCapacityAggregatorString(currentPartition), POSITIVE_ONE);
+//      }
+//    }
+//  }
+
   @Override
   public void updateVertex(Vertex<Long, ARPVertexValue> vertex,
     MessageIterator<Long> msg) throws Exception {
-    if (getSuperstepNumber() == 1) {
-      long newValue = vertex.getId() % k;
-      String aggregator = CAPACITY_AGGREGATOR_PREFIX + newValue;
-      notifyAggregator(aggregator, POSITIVE_ONE);
-      setNewVertexValue(new ARPVertexValue(newValue, Long.MAX_VALUE));
-    } else {
-      //odd numbered superstep 3 (migrate)
-      if ((getSuperstepNumber() % 2) == 1) {
-        long desiredPartition = vertex.getValue().getDesiredPartition();
-        long currentPartition = vertex.getValue().getCurrentPartition();
-        if (desiredPartition != currentPartition) {
-          boolean migrate = doMigrate(desiredPartition);
-          if (migrate) {
-            migrateVertex(vertex, desiredPartition);
-          }
+    System.out.println(getSuperstepNumber());
+    // demand
+    if ((getSuperstepNumber() % 2) == 1) {
+      long currentPartition = vertex.getValue().getCurrentPartition();
+      long desiredPartition = getDesiredPartition(vertex, msg);
+//      boolean changed = currentPartition != desiredPartition;
+//      if (changed) {
+        notifyAggregator(getDemandAggregatorString(desiredPartition), POSITIVE_ONE);
+        setNewVertexValue(new ARPVertexValue(currentPartition, desiredPartition));
+//      }
+
+    // migrate
+    } else if ((getSuperstepNumber() % 2) == 0) {
+
+      long desiredPartition = vertex.getValue().getDesiredPartition();
+      long currentPartition = vertex.getValue().getCurrentPartition();
+
+      System.out.println("knoten:" + vertex.getId() + " currentPart:" + currentPartition + " " +
+        "desiredPart:" + desiredPartition);
+
+      if (desiredPartition != currentPartition) {
+        boolean migrate = doMigrate(desiredPartition);
+        if (migrate) {
+          migrateVertex(vertex, desiredPartition);
         }
-        String aggregator = CAPACITY_AGGREGATOR_PREFIX + currentPartition;
-        notifyAggregator(aggregator, POSITIVE_ONE);
-        //even numbered superstep 2 (demand)
-      } else if ((getSuperstepNumber() % 2) == 0) {
-        long desiredPartition = getDesiredPartition(vertex, msg);
-        long currentPartition = vertex.getValue().getCurrentPartition();
-        boolean changed = currentPartition != desiredPartition;
-        if (changed) {
-          String aggregator = DEMAND_AGGREGATOR_PREFIX + desiredPartition;
-          notifyAggregator(aggregator, POSITIVE_ONE);
-          setNewVertexValue(new ARPVertexValue(currentPartition, desiredPartition));
-        }
-        String aggregator = CAPACITY_AGGREGATOR_PREFIX + currentPartition;
-        notifyAggregator(aggregator, POSITIVE_ONE);
       }
     }
   }
@@ -109,8 +140,7 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
       // partition -> desire to migrate
 
       long outDegree = vertex.getValue().getDegree();
-      double[] partitionWeights =
-        getPartitionWeights(countNeighbours, outDegree);
+      double[] partitionWeights = getPartitionWeights(countNeighbours, outDegree);
       double firstMax = Integer.MIN_VALUE;
       double secondMax = Integer.MIN_VALUE;
       int firstK = -1;
@@ -128,15 +158,16 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
       }
       if (firstMax == secondMax) {
         if (currentPartition != firstK && currentPartition != secondK) {
-          desiredPartition = firstK;
+          return firstK;
         } else {
-          desiredPartition = currentPartition;
+          return currentPartition;
         }
       } else {
-        desiredPartition = firstK;
+        return firstK;
       }
     }
-    return desiredPartition;
+    // no massages (degree = 0) -> return current partition
+    return currentPartition;
   }
 
   /**
@@ -166,10 +197,7 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
     long numEdges) {
     double[] partitionWeights = new double[k];
     for (int i = 0; i < k; i++) {
-      String capacity_aggregator = CAPACITY_AGGREGATOR_PREFIX + i;
-      LongValue aggregatedValue =
-        getPreviousIterationAggregate(capacity_aggregator);
-      long load = aggregatedValue.getValue();
+      long load = getAggregatedValue(getCapacityAggregatorString(i));
       long freq = partitionFrequencies[i];
       double weight = (double) freq / (load * numEdges);
       partitionWeights[i] = weight;
@@ -183,17 +211,13 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
    * @param vertex           vertex
    * @param desiredPartition partition to move vertex to
    */
-  private void migrateVertex(final Vertex<Long, ARPVertexValue> vertex,
-    long desiredPartition) {
+  private void migrateVertex(final Vertex<Long, ARPVertexValue> vertex, long desiredPartition) {
     // decrease capacity in old partition
-    String oldPartition =
-      CAPACITY_AGGREGATOR_PREFIX + vertex.getValue().getCurrentPartition();
-    notifyAggregator(oldPartition, NEGATIVE_ONE);
+    notifyAggregator(getCapacityAggregatorString(vertex.getValue().getCurrentPartition()), NEGATIVE_ONE);
     // increase capacity in new partition
-    String newPartition = CAPACITY_AGGREGATOR_PREFIX + desiredPartition;
-    notifyAggregator(newPartition, POSITIVE_ONE);
-    setNewVertexValue(new ARPVertexValue(desiredPartition,
-      vertex.getValue().getDesiredPartition()));
+    notifyAggregator(getCapacityAggregatorString(desiredPartition), POSITIVE_ONE);
+
+    setNewVertexValue(new ARPVertexValue(desiredPartition, vertex.getValue().getDesiredPartition()));
   }
 
   /**
@@ -206,12 +230,9 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
    */
   private boolean doMigrate(long desiredPartition) {
     long totalCapacity = getTotalCapacity();
-    String capacity_aggregator =
-      CAPACITY_AGGREGATOR_PREFIX + desiredPartition;
-    long load = getAggregatedValue(capacity_aggregator);
+    long load = getAggregatedValue(getCapacityAggregatorString(desiredPartition));
     long availability = totalCapacity - load;
-    String demand_aggregator = DEMAND_AGGREGATOR_PREFIX + desiredPartition;
-    long demand = getAggregatedValue(demand_aggregator);
+    long demand = getAggregatedValue(getDemandAggregatorString(desiredPartition));
     double threshold = (double) availability / demand;
     double randomRange = random.nextDouble();
     return Double.compare(randomRange, threshold) < 0;
@@ -238,6 +259,22 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
   private long getAggregatedValue(String agg) {
     LongValue aggregatedValue = getPreviousIterationAggregate(agg);
 
+    System.out.println(agg);
+
+    if (aggregatedValue == null) {
+      LongSumAggregator aggregator = getIterationAggregator(agg);
+      return aggregator.getAggregate().getValue();
+    }
+
     return aggregatedValue.getValue();
+  }
+
+
+  private String getDemandAggregatorString(long desiredPartition) {
+    return DEMAND_AGGREGATOR_PREFIX + desiredPartition;
+  }
+
+  private String getCapacityAggregatorString(long desiredPartition) {
+    return CAPACITY_AGGREGATOR_PREFIX + desiredPartition;
   }
 }

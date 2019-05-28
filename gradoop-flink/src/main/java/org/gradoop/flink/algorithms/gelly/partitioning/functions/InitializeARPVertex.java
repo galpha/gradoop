@@ -12,15 +12,17 @@ public class InitializeARPVertex implements MapFunction<Tuple3<Long, GradoopId, 
   ARPVertexValue>> {
 
   private Vertex<Long, ARPVertexValue> reuse;
+  private int numPartitions;
 
-  public InitializeARPVertex() {
+  public InitializeARPVertex(int numPartitions) {
     this.reuse = new Vertex<>();
+    this.numPartitions = numPartitions;
   }
 
   @Override
   public Vertex<Long, ARPVertexValue> map(Tuple3<Long, GradoopId, Long> tuple) throws Exception {
 
-    ARPVertexValue value = new ARPVertexValue(Long.MAX_VALUE, Long.MAX_VALUE, tuple.f2);
+    ARPVertexValue value = new ARPVertexValue(tuple.f0 % numPartitions, Long.MAX_VALUE, tuple.f2);
 
     reuse.setId(tuple.f0);
     reuse.setValue(value);

@@ -6,9 +6,17 @@ import org.gradoop.flink.io.impl.deprecated.logicalgraphcsv.LogicalGraphCSVDataS
 import org.gradoop.flink.io.impl.dot.DOTDataSink;
 import org.gradoop.flink.model.GradoopFlinkTestBase;
 import org.gradoop.flink.model.impl.epgm.LogicalGraph;
+import org.gradoop.flink.util.FlinkAsciiGraphLoader;
 import org.junit.Test;
 
 public class GradoopARPartitioningTest extends GradoopFlinkTestBase {
+
+  private String getGDLString() {
+    return
+        "(a:A)-->(b:B)-->(c:C)-->(d:D)-->(a)" +
+        "(d)-->(b)" +
+        "(a)-->(e:E)-->(f:F)-->(a)";
+  }
 
   @Test
   public void testGraph() throws Exception {
@@ -17,9 +25,12 @@ public class GradoopARPartitioningTest extends GradoopFlinkTestBase {
 
     DataSource source = new LogicalGraphCSVDataSource(input, getConfig());
 
+//    FlinkAsciiGraphLoader loader = new FlinkAsciiGraphLoader(getConfig());
+//    loader.initDatabaseFromString(getGDLString());
+
     LogicalGraph testGraph = source.getLogicalGraph();
 
-    LogicalGraph resultGraph = new GradoopARPartitioning(2, 100, "partition").execute(testGraph);
+    LogicalGraph resultGraph = new GradoopARPartitioning(2, 1, "partition").execute(testGraph);
 
     String output = "/home/galpha/datasets/gradoop/facebook_partitioned.dot";
 
