@@ -87,25 +87,25 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
     if ((getSuperstepNumber() % 2) == 1) {
       long currentPartition = vertex.getValue().getCurrentPartition();
       long desiredPartition = getDesiredPartition(vertex, msg);
-//      boolean changed = currentPartition != desiredPartition;
-//      if (changed) {
+      boolean changed = currentPartition != desiredPartition;
+      if (changed) {
         notifyAggregator(getDemandAggregatorString(desiredPartition), POSITIVE_ONE);
         setNewVertexValue(new ARPVertexValue(currentPartition, desiredPartition));
-//      }
+      }
 
-    // migrate
+      // migrate
     } else if ((getSuperstepNumber() % 2) == 0) {
 
       long desiredPartition = vertex.getValue().getDesiredPartition();
       long currentPartition = vertex.getValue().getCurrentPartition();
-
-      System.out.println("knoten:" + vertex.getId() + " currentPart:" + currentPartition + " " +
-        "desiredPart:" + desiredPartition);
-
-      if (desiredPartition != currentPartition) {
+      //Todo load in 4ter Iteration falsch
+      if (desiredPartition != currentPartition && desiredPartition != Long.MAX_VALUE) {
         boolean migrate = doMigrate(desiredPartition);
         if (migrate) {
           migrateVertex(vertex, desiredPartition);
+        }
+        else {
+          setNewVertexValue(vertex.getValue());
         }
       }
     }
@@ -132,7 +132,6 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
   private long getDesiredPartition(final Vertex<Long, ARPVertexValue> vertex,
     final Iterable<Long> messages) {
     long currentPartition = vertex.getValue().getCurrentPartition();
-    long desiredPartition = vertex.getValue().getDesiredPartition();
     // got messages?
     if (messages.iterator().hasNext()) {
       // partition -> neighbours in partition i
@@ -230,10 +229,15 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
    */
   private boolean doMigrate(long desiredPartition) {
     long totalCapacity = getTotalCapacity();
+    System.out.println("totalCapacity:" + totalCapacity);
     long load = getAggregatedValue(getCapacityAggregatorString(desiredPartition));
+    System.out.println("load:" + load);
     long availability = totalCapacity - load;
+    System.out.println("availability:" + availability);
     long demand = getAggregatedValue(getDemandAggregatorString(desiredPartition));
+    System.out.println("demand:" + demand);
     double threshold = (double) availability / demand;
+    System.out.println("threshold:" + threshold);
     double randomRange = random.nextDouble();
     return Double.compare(randomRange, threshold) < 0;
   }
@@ -258,8 +262,6 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
    */
   private long getAggregatedValue(String agg) {
     LongValue aggregatedValue = getPreviousIterationAggregate(agg);
-
-    System.out.println(agg);
 
     if (aggregatedValue == null) {
       LongSumAggregator aggregator = getIterationAggregator(agg);
