@@ -30,11 +30,6 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
   private String CAPACITY_AGGREGATOR_PREFIX = GradoopARPartitioning.CAPACITY_AGGREGATOR_PREFIX;
   private String DEMAND_AGGREGATOR_PREFIX = GradoopARPartitioning.DEMAND_AGGREGATOR_PREFIX;
 
-  public ARPUpdate(int numPartitions) {
-    this.k = numPartitions;
-    this.capacityThreshold = 0.1;
-    this.random = new Random();
-  }
 
   public ARPUpdate(int numPartitions, double capacityThreshold) {
     this.k = numPartitions;
@@ -42,73 +37,37 @@ public class ARPUpdate extends GatherFunction<Long, ARPVertexValue, Long> {
     this.random = new Random();
   }
 
-
-//  @Override
-//  public void updateVertex(Vertex<Long, ARPVertexValue> vertex,
-//    MessageIterator<Long> msg) throws Exception {
-//    System.out.println(getSuperstepNumber());
-//    if (getSuperstepNumber() == 1) {
-//      long newValue = vertex.getId() % k;
-//      notifyAggregator(getCapacityAggregatorString(newValue), POSITIVE_ONE);
-//      setNewVertexValue(new ARPVertexValue(newValue, Long.MAX_VALUE));
-//    } else {
-//      //odd numbered superstep 3 (migrate)
-//      if ((getSuperstepNumber() % 2) == 1) {
-//        long desiredPartition = vertex.getValue().getDesiredPartition();
-//        long currentPartition = vertex.getValue().getCurrentPartition();
-//        if (desiredPartition != currentPartition) {
-//          boolean migrate = doMigrate(desiredPartition);
-//          if (migrate) {
-//            migrateVertex(vertex, desiredPartition);
-//          } else {
-//            setNewVertexValue(vertex.getValue());
-//          }
-//        }
-//        notifyAggregator(getCapacityAggregatorString(currentPartition), POSITIVE_ONE);
-//        //even numbered superstep 2 (demand)
-//      } else if ((getSuperstepNumber() % 2) == 0) {
-//        long desiredPartition = getDesiredPartition(vertex, msg);
-//        long currentPartition = vertex.getValue().getCurrentPartition();
-//        boolean changed = currentPartition != desiredPartition;
-//        if (changed) {
-//          notifyAggregator(getDemandAggregatorString(desiredPartition), POSITIVE_ONE);
-//          setNewVertexValue(new ARPVertexValue(currentPartition, desiredPartition));
-//        }
-//        notifyAggregator(getCapacityAggregatorString(currentPartition), POSITIVE_ONE);
-//      }
-//    }
-//  }
-
   @Override
   public void updateVertex(Vertex<Long, ARPVertexValue> vertex,
     MessageIterator<Long> msg) throws Exception {
     System.out.println(getSuperstepNumber());
     // demand
-    if ((getSuperstepNumber() % 2) == 1) {
-      long currentPartition = vertex.getValue().getCurrentPartition();
-      long desiredPartition = getDesiredPartition(vertex, msg);
-      boolean changed = currentPartition != desiredPartition;
-      if (changed) {
-        notifyAggregator(getDemandAggregatorString(desiredPartition), POSITIVE_ONE);
-        setNewVertexValue(new ARPVertexValue(currentPartition, desiredPartition));
-      }
-
-      // migrate
-    } else if ((getSuperstepNumber() % 2) == 0) {
-
-      long desiredPartition = vertex.getValue().getDesiredPartition();
-      long currentPartition = vertex.getValue().getCurrentPartition();
-      //Todo load in 4ter Iteration falsch
-      if (desiredPartition != currentPartition && desiredPartition != Long.MAX_VALUE) {
-        boolean migrate = doMigrate(desiredPartition);
-        if (migrate) {
-          migrateVertex(vertex, desiredPartition);
+    if (getSuperstepNumber() == 1) {
+      setNewVertexValue(vertex.getValue());
+    } else {
+      if ((getSuperstepNumber() % 2) == 0) {
+        long currentPartition = vertex.getValue().getCurrentPartition();
+        long desiredPartition = getDesiredPartition(vertex, msg);
+        boolean changed = currentPartition != desiredPartition;
+        if (changed) {
+          notifyAggregator(getDemandAggregatorString(desiredPartition), POSITIVE_ONE);
+          setNewVertexValue(new ARPVertexValue(currentPartition, desiredPartition));
         }
-        else {
-          setNewVertexValue(vertex.getValue());
+
+        // migrate
+      } else if ((getSuperstepNumber() % 2) == 1) {
+
+        long desiredPartition = vertex.getValue().getDesiredPartition();
+        long currentPartition = vertex.getValue().getCurrentPartition();
+        if (desiredPartition != currentPartition && desiredPartition != Long.MAX_VALUE) {
+          boolean migrate = doMigrate(desiredPartition);
+          if (migrate) {
+            migrateVertex(vertex, desiredPartition);
+          }
         }
       }
     }
+    notifyAggregator(getCapacityAggregatorString(vertex.getValue().getCurrentPartition()), POSITIVE_ONE);
   }
 
   /**

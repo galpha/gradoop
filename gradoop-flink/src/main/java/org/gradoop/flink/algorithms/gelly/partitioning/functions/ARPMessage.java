@@ -13,20 +13,15 @@ public class ARPMessage extends ScatterFunction<Long, ARPVertexValue, Long, Null
   @Override
   public void sendMessages(Vertex<Long, ARPVertexValue> vertex) throws Exception {
 
-//    if (getSuperstepNumber() == 1) {
+
+//    if ((getSuperstepNumber() % 2) == 1) {
+//      notifyAggregator(getCapacityAggregatorString(vertex.getValue().getCurrentPartition()));
+//      sendMessageTo(vertex.getId(), vertex.getValue().getCurrentPartition());
+//    } else {
 //      notifyAggregator(getCapacityAggregatorString(vertex.getValue().getCurrentPartition()));
 //      sendMessageToAllNeighbors(vertex.getValue().getCurrentPartition());
-//    } else {
-//      if ((getSuperstepNumber() % 2) == 1) {
-//        notifyAggregator(getCapacityAggregatorString(vertex.getValue().getCurrentPartition()));
-//        sendMessageTo(vertex.getId(), vertex.getValue().getCurrentPartition());
-//      } else {
-//        notifyAggregator(getCapacityAggregatorString(vertex.getValue().getCurrentPartition()));
-//        sendMessageToAllNeighbors(vertex.getValue().getCurrentPartition());
-//      }
 //    }
 
-    notifyAggregator(getCapacityAggregatorString(vertex.getValue().getCurrentPartition()));
     sendMessageToAllNeighbors(vertex.getValue().getCurrentPartition());
 
   }

@@ -45,20 +45,19 @@ public class GradoopARPartitioning extends BaseGellyAlgorithm<Long, ARPVertexVal
 
   private final int numPartitions;
 
+  private final double threshold;
+
+
   DataSet<Tuple3<Long, GradoopId, Long>> vertexIdsMap;
 
   DataSet<Tuple2<Long, GradoopId>> edgeIdsMap;
 
 
-  public GradoopARPartitioning(int numPartitions, String propertyKey) {
-    this.numPartitions = numPartitions;
-    this.maxIteration = 100;
-    this.PROPERTY_KEY = propertyKey;
-  }
-
-  public GradoopARPartitioning(int numPartitions, int maxIteration, String propertyKey){
+  public GradoopARPartitioning(int numPartitions, int maxIteration, double speed,
+    String propertyKey){
     this.numPartitions = numPartitions;
     this.maxIteration = maxIteration;
+    this.threshold = speed;
     this.PROPERTY_KEY = propertyKey;
   }
 
@@ -110,7 +109,7 @@ public class GradoopARPartitioning extends BaseGellyAlgorithm<Long, ARPVertexVal
     ScatterGatherConfiguration configuration = createVCIParams();
 
     Graph<Long, ARPVertexValue, NullValue> resultGraph = graph.getUndirected().runScatterGatherIteration(
-      new ARPMessage(), new ARPUpdate(numPartitions), maxIteration, configuration);
+      new ARPMessage(), new ARPUpdate(numPartitions, threshold), maxIteration, configuration);
 
     DataSet<org.gradoop.common.model.impl.pojo.Vertex> updatedVertices = resultGraph.getVertices()
       .join(vertexIdsMap)
