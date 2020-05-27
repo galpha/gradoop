@@ -15,7 +15,6 @@
  */
 package org.gradoop.flink.model.impl.operators.tostring;
 
-import org.apache.commons.io.FileUtils;
 import org.gradoop.common.model.impl.pojo.EPGMEdge;
 import org.gradoop.common.model.impl.pojo.EPGMGraphHead;
 import org.gradoop.common.model.impl.pojo.EPGMVertex;
