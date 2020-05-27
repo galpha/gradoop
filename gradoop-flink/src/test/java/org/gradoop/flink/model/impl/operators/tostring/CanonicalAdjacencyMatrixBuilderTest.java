@@ -36,7 +36,8 @@ public class CanonicalAdjacencyMatrixBuilderTest extends GradoopFlinkTestBase {
   public void testDirected() throws Exception {
     FlinkAsciiGraphLoader loader = new FlinkAsciiGraphLoader(getConfig());
 
-    loader.initDatabaseFromFile(getFilePath("/data/gdl/cam_test.gdl"));
+    loader.initDatabaseFromFile(
+      CanonicalAdjacencyMatrixBuilderTest.class.getResource("/data/gdl/cam_test.gdl").getFile());
 
     GraphCollection g = loader.getGraphCollection();
 
@@ -48,8 +49,11 @@ public class CanonicalAdjacencyMatrixBuilderTest extends GradoopFlinkTestBase {
 
     String result = cam.execute(g).collect().get(0);
 
-    String expectation = FileUtils.readFileToString(
-      FileUtils.getFile(getFilePath("/data/expected/cam_test_directed")));
+    String expectation = CanonicalAdjacencyMatrixBuilderTest.class.getResource("/data/expected" +
+      "/cam_test_directed").getFile();
+
+//      FileUtils.readFileToString(
+//      FileUtils.getFile(getFilePath("/data/expected/cam_test_directed")));
 
     assertEquals(expectation, result);
   }
@@ -58,7 +62,8 @@ public class CanonicalAdjacencyMatrixBuilderTest extends GradoopFlinkTestBase {
   public void testUndirected() throws Exception {
     FlinkAsciiGraphLoader loader = new FlinkAsciiGraphLoader(getConfig());
 
-    loader.initDatabaseFromFile(getFilePath("/data/gdl/cam_test.gdl"));
+    loader.initDatabaseFromFile(
+      CanonicalAdjacencyMatrixBuilderTest.class.getResource("/data/gdl/cam_test.gdl").getFile());
 
     GraphCollection g = loader.getGraphCollection();
 
@@ -70,8 +75,11 @@ public class CanonicalAdjacencyMatrixBuilderTest extends GradoopFlinkTestBase {
 
     String result = cam.execute(g).collect().get(0);
 
-    String expectation = FileUtils.readFileToString(
-      FileUtils.getFile(getFilePath("/data/expected/cam_test_undirected")));
+    String expectation =
+      CanonicalAdjacencyMatrixBuilderTest.class.getResource("/data/gdl/cam_test.gdl").getFile();
+
+//      FileUtils.readFileToString(
+//      FileUtils.getFile(getFilePath("/data/gdl/cam_test.gdl")));
 
     assertEquals(expectation, result);
   }
